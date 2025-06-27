@@ -5,10 +5,11 @@ use Bitrix\Main\Loader;
 use Bitrix\Catalog\StoreProductTable;
 use Bitrix\Main\Application;
 use Bitrix\Main\Context;
-use Bitrix\Sale\Fuser;
+use Bitrix\Main\Event;
 use Bitrix\Main\EventResult;
 use Bitrix\Main\Error;
-use Bitrix\Main\Event;
+use Bitrix\Iblock\ElementTable;
+use Bitrix\Sale\Fuser;
 
 use Sotbit\Multibasket\Models\MBasket;
 use Sotbit\Multibasket\Entity\MBasketTable;
@@ -48,7 +49,7 @@ class BasketHandler{
         if (!$productId) {
             return;
         }
-
+        file_put_contents(Application::getDocumentRoot().'/test.txt', print_r('11', true)."\n", FILE_APPEND);
         // Получаем значение свойства "Стандартный склад"
         $res = \CIBlockElement::GetList([], ['ID' => $productId], false, false, ['PROPERTY_DEFAULT_STORE']);
         $item = $res->Fetch();
@@ -73,13 +74,14 @@ class BasketHandler{
                 ],
                 'select' => ['AMOUNT']
             ])->fetch();
-
+            file_put_contents(Application::getDocumentRoot().'/test.txt', "Stock: ".print_r($stock, true)."\n", FILE_APPEND);
+            file_put_contents(Application::getDocumentRoot().'/test.txt', "Stock: ".print_r($basket, true)."\n", FILE_APPEND);
             if ($stock && (float)$stock['AMOUNT'] > 0) {
                 $validBasketId = $basket['ID'];
                 break;
             }
         }
-
+        file_put_contents(Application::getDocumentRoot().'/test.txt', "ValidBasketId: ".print_r($validBasketId, true)."\n", FILE_APPEND);
         // Если не нашли — проверяем стандартный склад
         if (!$validBasketId && $defaultStoreId > 0) {
             $defaultStock = StoreProductTable::getList([
@@ -89,7 +91,7 @@ class BasketHandler{
                 ],
                 'select' => ['AMOUNT']
             ])->fetch();
-
+            file_put_contents(Application::getDocumentRoot().'/test.txt', "DefaultStock: ".print_r($defaultStock, true)."\n", FILE_APPEND);
             if ($defaultStock && (float)$defaultStock['AMOUNT'] > 0) {
                 // Проверяем есть ли мультикорзина с этим складом
                 $basket = MBasketTable::getList([
@@ -99,7 +101,7 @@ class BasketHandler{
                     ],
                     'limit' => 1
                 ])->fetch();
-
+                file_put_contents(Application::getDocumentRoot().'/test.txt', print_r($basket, true)."\n", FILE_APPEND);
                 if (!$basket) {
                     // Создаём мультикорзину под стандартный склад
                     $result = MBasketTable::add([
@@ -116,7 +118,7 @@ class BasketHandler{
                 }
             }
         }
-
+        file_put_contents(Application::getDocumentRoot().'/test.txt', "ValidBasketId: ".print_r($validBasketId, true)."\n", FILE_APPEND);
         if ($validBasketId) {
             // Добавляем товар в валидную мультикорзину
             MBasketItemTable::add([
